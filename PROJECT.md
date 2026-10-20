@@ -15,5 +15,8 @@ Source: https://github.com/itsnotalwin/Doodle_world. Preserve the original aesth
 ## Optional Groq
 No provider call is required for the growing world. One explicitly requested batch can supply up to 12 character plans, art recipes, social targets and thoughts; local execution lasts at most 180 simulated seconds before local policies resume. Server D1 quota defaults to five attempts per UTC day with a 60-second cooldown; failed attempts count and nothing retries automatically. Key stays in server secrets. Live testing is pending a user-supplied `GROQ_API_KEY` plus supported `GROQ_MODEL`.
 
+## Draft polish status
+A remote-only draft prepares common character sizing, silhouette-aware labels/status, crowded-label suppression, creator-preview encoding and selection/zoom fixes. It is not deployed or fully verified. The current genuine screenshots and 55-test result describe deployed version 4. Restore the execution/browser workspace, run the six added regressions and full checks, inspect desktop/mobile visuals and capture current evidence before merge/publication.
+
 ## Next action
-Configure the server-side Groq key/model and test one deliberate batch. Shared multiplayer and background/cloud worlds remain future work; keep expansion grounded in observed behavior and user feedback.
+Finish and verify the polish draft first. Configure the server-side Groq key/model and test one deliberate batch. Shared multiplayer and background/cloud worlds remain future work; keep expansion grounded in observed behavior and user feedback.

@@ -1,3 +1,13 @@
+# Remote polish draft — incomplete verification
+
+20 Oct 2026: prepared through GitHub while shell execution reports no usable environment. The cloud browser tool is absent. No new deployment, screenshot, npm test/build/validate run or build-standard audit was performed for this draft.
+
+Isolated JavaScript checks executed in the tool orchestration runtime: 200 seeded character layouts remained bounded, child geometry scaled once, selected thoughts cleared leader titles, an 80,000-point sketch remained unchanged and finite, 100 crowded candidate labels accepted 15 mutually non-overlapping labels, and repeated zoom retained the selection destination. Changed browser sources parsed for syntax without executing the DOM. These checks do not establish rendered aesthetics or replace Node/browser QA. Six regression tests have been added for the normal Node test runner but not run there.
+
+Before merge and publication: run `npm test`, `npm run build`, `npm run validate` and the vault build checker; inspect the real running desktop/mobile creator and world; compare generated figures against their preview and inherited offspring; inspect crowns/ears/wings/gear and dense settlements; check selection during repeated button/wheel zoom, keyboard/scroll and save/load; then update authentic screenshots and the design note. Signed-in production cloud checkpoint verification remains pending separately.
+
+## Previous deployed version 4 evidence
+
 # Settlement verification — 20 October 2026
 
 ## Automated
