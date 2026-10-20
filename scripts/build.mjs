@@ -1,6 +1,6 @@
 import {readFile,mkdir,writeFile,cp,rm} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
-const systems=(await read('sim/world-systems.js')).replaceAll(/^export /gm,'');
+const systems=(await Promise.all(['drawing-library','life-systems','world-systems'].map(n=>read('sim/'+n+'.js')))).map(s=>s.replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'')).join('\n');
 const engine=systems+'\n'+(await read('sim/engine.js')).replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'');
 const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine).replace('/*__WORLD_VIEW__*/',await read('ui/world-view.js'));
 const server=await read('worker/index.js');

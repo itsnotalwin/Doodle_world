@@ -1,14 +1,16 @@
+import {EXTRA_MOTIFS,libraryStrokes} from './drawing-library.js';
+import {autonomousGroups} from './life-systems.js';
 // Shared environment, procedural creativity, social rules and globe projection.
 // No network or DOM dependencies: the world remains a local simulation.
-export const FIELD_SIZE=24000;
-export const MOTIFS=['flower','tree','bird','star','sun','moon','spiral','portrait','river','house','mountain','heart'];
+export const FIELD_SIZE=2400000;
+export const MOTIFS=['flower','tree','bird','star','sun','moon','spiral','portrait','river','house','mountain','heart',...EXTRA_MOTIFS];
 export const cap=(n,a,b)=>Math.max(a,Math.min(b,n));
 export const hash=(x,y,seed=71)=>{const n=Math.sin(x*127.1+y*311.7+seed*13.37)*43758.5453;return n-Math.floor(n);};
 export function terrainAt(x,y,seed=71){
  const lon=x/FIELD_SIZE*Math.PI*2,lat=y/FIELD_SIZE*Math.PI;
  const land=Math.sin(lon*1.8+Math.sin(lat*3)*.9)+Math.cos(lat*2.3+lon*.55)*.85+Math.sin(lon*3.2-lat*2)*.3;
  if(land<-.48)return {biome:'water',color:'#dbe7e1',speed:.42};
- if(Math.abs(y)>9700)return {biome:'tundra',color:'#e7e9df',speed:.8};
+ if(Math.abs(y)>FIELD_SIZE*.4)return {biome:'tundra',color:'#e7e9df',speed:.8};
  const moisture=Math.sin(lon*4+seed*.01)+Math.cos(lat*5-lon);
  if(moisture<-.8)return {biome:'dunes',color:'#eee3c9',speed:.75};
  if(moisture>1.12)return {biome:'forest',color:'#dce5cc',speed:.82};
@@ -24,7 +26,7 @@ export function resourceNodes(w,x,y,radius=650){
  const fixed=[{id:'water:-3:1',x:-510,y:360,kind:'water',max:100},{id:'food:0:0',x:-80,y:95,kind:'food',max:14},{id:'ink:0:0',x:100,y:65,kind:'ink',max:16}];
  for(const n of fixed)if(Math.hypot(n.x-x,n.y-y)<radius)nodes.push(n);
  for(let i=cx-reach;i<=cx+reach;i++)for(let j=cy-reach;j<=cy+reach;j++){
-  if(Math.abs(i*cell)>11900||Math.abs(j*cell)>11900)continue;
+  if(Math.abs(i*cell)>FIELD_SIZE/2-100||Math.abs(j*cell)>FIELD_SIZE/2-100)continue;
   const n=hash(i,j,w.seed),kind=n<.23?'food':n<.5?'ink':n<.59?'water':null;if(!kind)continue;
   const px=i*cell+40+hash(i+9,j,w.seed)*130,py=j*cell+40+hash(i,j+9,w.seed)*130;
   if(terrainAt(px,py,w.seed).biome==='water'&&kind!=='water')continue;
@@ -65,35 +67,21 @@ export function interact(w,a,b,type,log){
   changeBond(a,b,12);changeBond(b,a,10);a.mood.anger=Math.max(0,a.mood.anger-24);b.mood.anger=Math.max(0,b.mood.anger-20);log(w,a.name+' made peace with '+b.name+'.','social');
  }else{
   const shared=a.traits.builder*b.traits.builder+a.traits.curious*b.traits.curious;
-  const gain=(type==='admire'?7:5)+shared*2;changeBond(a,b,gain);changeBond(b,a,gain*.9);
+  const gain=(type==='admire'?7:5)+shared*2+(a.personality?.openness??.5)*2;if(a.ink>20&&b.ink<8&&(a.personality?.generosity??0)>.6){a.ink-=3;b.ink+=3;}if(type==='admire'&&(a.personality?.jealousy??0)>.8&&b.artCount>a.artCount+3)feelAngry(a,b,3);changeBond(a,b,gain);changeBond(b,a,gain*.9);
   a.mood.joy=cap(a.mood.joy+7,0,100);b.mood.joy=cap(b.mood.joy+5,0,100);
  }
  a.mood.loneliness=Math.max(0,a.mood.loneliness-28);b.mood.loneliness=Math.max(0,b.mood.loneliness-18);
  a.thought=names[type]?.[a.id%2]||names.talk[0];b.thought=type==='argue'?'I won’t forget that in a hurry.':type==='apologize'?'A fresh start might be nice.':'Maybe we could make something together.';
  a.socialCooldown=18;b.socialCooldown=Math.max(b.socialCooldown,10);
 }
-export function formGroups(w,log){
- // Existing circles dissolve or lose members when their mutual bonds break down.
- for(const g of w.groups){g.members=g.members.filter(id=>{const d=w.doodles.find(d=>d.id===id);if(!d)return false;const rivals=g.members.filter(other=>other!==id&&(d.relationships[other]||0)<-25).length;if(rivals>=2){d.groupId=null;log(w,d.name+' left '+g.name+'.','group');return false;}return true;});}
- w.groups=w.groups.filter(g=>{if(g.members.length>=2)return true;for(const id of g.members){const d=w.doodles.find(d=>d.id===id);if(d)d.groupId=null;}return false;});
- // A circle grows only from a connected network of mutual friendships.
- const free=w.doodles.filter(d=>!d.groupId),visited=new Set();
- for(const root of free){if(visited.has(root.id))continue;const stack=[root],component=[];visited.add(root.id);
-  while(stack.length){const d=stack.pop();component.push(d);for(const o of free)if(!visited.has(o.id)&&relationship(d,o)>=24&&relationship(o,d)>=24){visited.add(o.id);stack.push(o);}}
-  if(component.length<3||w.groups.length>=20)continue;
-  const founder=component[0],id='g'+w.nextId++,style=founder.traits.builder>.7?'makers':founder.traits.curious>.7?'wanderers':'neighbours';
-  const g={id,name:founder.name+'’s '+(style==='makers'?'Ink Circle':style==='wanderers'?'Wandering Club':'Paperfolk'),members:component.map(d=>d.id),founded:w.time,color:founder.color,style};
-  w.groups.push(g);component.forEach(d=>{d.groupId=id;d.thought='We are '+g.name+'. This feels like home.';});log(w,g.name+' formed from '+component.length+' friendships.','group');
- }
- for(const d of w.doodles.filter(d=>!d.groupId))for(const g of w.groups){const friends=g.members.filter(id=>(d.relationships[id]||0)>=28);if(friends.length>=2){g.members.push(d.id);d.groupId=g.id;log(w,d.name+' joined '+g.name+'.','group');break;}}
-}
+export function formGroups(w,log){autonomousGroups(w,log);}
 export function tickSociety(w,dt,log){
  w.environment=environmentAt(w.time,w.seed);
- for(const d of w.doodles){d.mood.anger=Math.max(0,d.mood.anger-dt*.09);d.mood.loneliness=cap(d.mood.loneliness+dt*.075,0,100);d.mood.joy=cap(d.mood.joy+dt*(d.needs.food<25||d.needs.water<25?-.25:.008),0,100);d.socialCooldown=Math.max(0,d.socialCooldown-dt);d.needs.food=Math.max(0,d.needs.food-dt*.105);d.needs.water=Math.max(0,d.needs.water-dt*(w.environment.season==='summer'?.18:.145));}
+ for(const d of w.doodles.filter(d=>d.alive!==false)){d.mood.anger=Math.max(0,d.mood.anger-dt*(.03+(d.personality?.forgiveness??.5)*.12));d.mood.loneliness=cap(d.mood.loneliness+dt*(.025+(d.personality?.sociability??.5)*.1),0,100);d.mood.joy=cap(d.mood.joy+dt*(d.needs.food<25||d.needs.water<25?-.25*(1-(d.personality?.resilience??.5)*.45):.008),0,100);d.socialCooldown=Math.max(0,d.socialCooldown-dt);d.needs.food=Math.max(0,d.needs.food-dt*.105);d.needs.water=Math.max(0,d.needs.water-dt*(w.environment.season==='summer'?.18:.145));}
  w.socialClock+=dt;w.groupClock+=dt;
  if(w.socialClock>=2){regenerateResources(w,w.socialClock);w.socialClock=0;
-  if(w.social)for(const a of w.doodles){if(a.socialCooldown>0||a.action==='spar'||a.action==='argue')continue;
-   const b=w.doodles.find(o=>o.id>a.id&&o.socialCooldown<=0&&Math.hypot(o.x-a.x,o.y-a.y)<95&&o.action!=='spar');if(!b)continue;
+  if(w.social)for(const a of w.doodles.filter(d=>d.alive!==false)){if(a.socialCooldown>0||a.action==='spar'||a.action==='argue')continue;
+   const b=w.doodles.find(o=>o.alive!==false&&o.id>a.id&&o.socialCooldown<=0&&Math.hypot(o.x-a.x,o.y-a.y)<95&&o.action!=='spar');if(!b)continue;
    if(a.mood.anger>65&&relationship(a,b)<-10)interact(w,a,b,'argue',log);else interact(w,a,b,'talk',log);
   }
  }
@@ -102,7 +90,7 @@ export function tickSociety(w,dt,log){
 export function inventIdea(d,w,random=Math.random,recipe=null){
  let motifs=recipe?.motifs?.filter(m=>MOTIFS.includes(m)).slice(0,3)||[];
  const description=d.description.toLowerCase(),terrain=terrainAt(d.x,d.y,w.seed).biome,mood=moodName(d);
- if(!motifs.length){const pool=['flower','tree','bird','star','sun','spiral','portrait','river','house','heart'];
+ if(!motifs.length){const learned=Math.min(EXTRA_MOTIFS.length,4+Math.floor((d.knowledge||0)/100*EXTRA_MOTIFS.length*(.8+(d.personality?.creativity??.5)*.4)));const pool=['flower','tree','bird','star','sun','spiral','portrait','river','house','heart',...EXTRA_MOTIFS.slice(0,learned)];for(const name of EXTRA_MOTIFS)if(description.includes(name))pool.push(name,name,name);
   if(/space|star|moon|cosmic/.test(description))pool.push('star','moon','star');
   if(/flower|garden|nature|gentle/.test(description))pool.push('flower','tree','heart');
   if(/build|architect|village/.test(description))pool.push('house','house','mountain');
@@ -118,6 +106,7 @@ export function artStrokes(idea,quality=0){
  const paths=[],r=(n)=>hash(n,idea.seed,idea.seed),m=idea.motifs;
  for(let i=0;i<m.length;i++){const x=(i-(m.length-1)/2)*30,y=i%2?-3:2,s=12+r(i)*7;const add=p=>paths.push(p);
   switch(m[i]){
+   default:for(const path of libraryStrokes(m[i]))add(path.map(([px,py])=>[x+px*.65,y+py*.65]));break;
    case 'flower':add([[x,y],[x-2,y+22]]);for(let k=0;k<5+Math.floor(r(i+5)*4);k++){let a=k*Math.PI*2/(5+Math.floor(r(i+5)*4));add(circleStroke(x+Math.cos(a)*s*.65,y+Math.sin(a)*s*.65,s*.4,10));}add(circleStroke(x,y,s*.28));add([[x-2,y+13],[x-12,y+8],[x-2,y+19]]);break;
    case 'tree':add([[x,y+24],[x,y-5]]);add([[x-s,y+9],[x,y-s*1.5],[x+s,y+9],[x-s,y+9]]);break;
    case 'bird':add([[x-s,y],[x-s*.5,y-s*.6],[x,y],[x+s*.5,y-s*.6],[x+s,y]]);break;
@@ -133,10 +122,10 @@ export function artStrokes(idea,quality=0){
   }
  }
  const noise=(1-cap(quality,0,100)/100)*(idea.tone==='angry'?2.4:1.2);
- return paths.map((p,pi)=>p.map(([x,y],j)=>[cap(x+(r(pi*59+j)-.5)*noise,-150,150),cap(y+(r(pi*41+j+7)-.5)*noise,-150,150)]));
+ return paths.map((p,pi)=>p.map(([x,y],j)=>[Math.round(cap(x+(r(pi*59+j)-.5)*noise,-150,150)*100)/100,Math.round(cap(y+(r(pi*41+j+7)-.5)*noise,-150,150)*100)/100]));
 }
 export function inventBuilding(d,w,random=Math.random){
- const kind=d.groupId&&random()<.45?'workshop':d.mood.anger>60?'tower':['cottage','workshop','tower'][Math.floor(random()*3)];
+ const kind=(d.knowledge||0)<10?'cottage':d.groupId&&random()<.45?'workshop':d.mood.anger>60?'tower':['cottage','workshop','tower'][Math.floor(random()*3)];
  const width=26+random()*21,height=25+random()*20,roof=22+random()*26,windows=1+Math.floor(random()*3);
  const blueprint=kind==='tower'?[[[-width*.65,height],[-width*.65,-height],[-width*.85,-height],[-width*.85,-height-12],[-width*.4,-height-12],[-width*.4,-height-5],[0,-height-5],[0,-height-12],[width*.4,-height-12],[width*.4,-height-5],[width*.85,-height-5],[width*.85,-height],[width*.65,-height],[width*.65,height],[-width*.65,height]]]:[[[-width,0],[0,-roof],[width,0],[-width,0]],[[-width*.8,0],[-width*.8,height],[width*.8,height],[width*.8,0]]];
  blueprint.push([[-6,height],[-6,height-19],[6,height-19],[6,height]]);

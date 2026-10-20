@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createApp} from '../worker/index.js';
 const root=new URL('../',import.meta.url);
 http.createServer(async(req,res)=>{try{
- const systems=(await readFile(new URL('sim/world-systems.js',root),'utf8')).replaceAll(/^export /gm,'');
+ const systems=(await Promise.all(['drawing-library','life-systems','world-systems'].map(n=>readFile(new URL('sim/'+n+'.js',root),'utf8')))).map(s=>s.replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'')).join('\n');
  const engine=systems+'\n'+(await readFile(new URL('sim/engine.js',root),'utf8')).replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'');
  const page=(await readFile(new URL('ui/index.html',root),'utf8')).replace('/*__ENGINE__*/',engine).replace('/*__WORLD_VIEW__*/',await readFile(new URL('ui/world-view.js',root),'utf8'));
  if(req.url==='/__qa/mobile'){res.writeHead(200,{'Content-Type':'text/html'});res.end(await readFile(new URL('ui/responsive-preview.html',root)));return;}

@@ -1,0 +1,85 @@
+// Serializable heredity, autonomous affiliation and civilization consequences.
+// Traits are utility inputs. Experience stays with individuals, never in inherited DNA.
+export const TRAIT_NAMES=['aggression','empathy','sociability','dominance','ambition','loyalty','curiosity','creativity','patience','caution','resilience','cooperation','jealousy','territoriality','forgiveness','impulsivity','fertility','openness','revenge','generosity','leadership','wanderlust','discipline','independence'];
+export const GENE_NAMES=[...TRAIT_NAMES,'height','head','eyes','hair','ears','species','aptitude','body'];
+const bounded=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+export function lifeRandom(seed){let s=seed>>>0;return()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};}
+export function genomeFor(seed){const r=lifeRandom(seed);return Object.fromEntries(GENE_NAMES.map(k=>[k,[r(),r()]]));}
+export function gene(d,k){const a=d.genome[k];return (a[0]+a[1])/2;}
+export function inheritGenome(a,b,random=Math.random){return Object.fromEntries(GENE_NAMES.map(k=>[k,[a.genome[k][random()<.5?0:1],b.genome[k][random()<.5?0:1]].map(v=>bounded(v+(random()<.08?(random()-.5)*.12:0)))]));}
+export function characterTraits(d){const text=d.description.toLowerCase(),t=Object.fromEntries(TRAIT_NAMES.map(k=>[k,gene(d,k)]));
+ const biases={aggression:[/aggress|violent|ruthless|angry|warrior/,/gentle|peace|kind/],empathy:[/kind|gentle|heal|protect/,/cruel|ruthless/],sociability:[/friendly|social|group/,/loner|solitary|shy/],creativity:[/artist|draw|creative|imagin/,/uncreative/],leadership:[/leader|rally|captain|king|queen/,/follower|shy/],independence:[/independent|loner|free|solitary/,/loyal|follower/],loyalty:[/loyal|devoted/,/disloyal|betray/],curiosity:[/curious|learn|explor/,/cautious/],ambition:[/ambitious|conquer|leader/,/content|humble/],caution:[/cautious|shy|peace/,/reckless|fearless/],revenge:[/revenge|vengeful|ruthless/,/forgiv|gentle/],fertility:[/family|parent|children/,/solitary/],cooperation:[/kind|friendly|build|community/,/selfish|loner/],patience:[/patient|study|work/,/impulsive/],wanderlust:[/explor|wander|adventur/,/homebody/]};
+ for(const [k,[yes,no]] of Object.entries(biases))t[k]=bounded(t[k]+(yes.test(text)?.3:0)-(no.test(text)?.3:0),.02,.98);
+ return t;
+}
+export function phenotype(d){const s=d.description.toLowerCase();let species=['human','human','cat','rabbit','robot','fox','alien','mushroom'][Math.floor(gene(d,'species')*8)];for(const name of ['human','cat','rabbit','robot','fox','alien','mushroom','dragon','bird','ghost'])if(s.includes(name))species=name;
+ return {species,height:.78+gene(d,'height')*.48,head:7+gene(d,'head')*5,eyes:2+gene(d,'eyes')*3,hair:Math.floor(gene(d,'hair')*5),accessory:/wizard|witch/.test(s)?'wizard':/knight|warrior/.test(s)?'helmet':/crown|queen|king/.test(s)?'crown':/glasses|nerd|scientist/.test(s)?'glasses':/pirate/.test(s)?'pirate':/wings|fairy|angel/.test(s)?'wings':/hat/.test(s)?'hat':'none'};
+}
+export function initLife(d,seed=71,parents=[]){d.genome=genomeFor(seed+d.id*104729);d.personality=characterTraits(d);d.appearance=phenotype(d);d.parents=parents;d.generation=0;d.born=0;d.alive=true;d.death=null;d.stage='novice';d.knowledge=0;d.familyCooldown=0;d.decision={time:0,kind:'independent',reason:'I am getting to know this world.'};d.rallyUntil=0;d.warTarget=null;return d;}
+export function migrateLife(w){const old=w.version<3;if(!old)return w;w.version=3;w.lifeClock=0;w.births=0;w.deaths=0;w.destructions=0;w.upgrades=0;w.lethal=true;for(const d of w.doodles){initLife(d,w.seed);d.knowledge=Math.min(100,d.age/45);d.born=Math.max(0,w.time-d.age);for(const a of ['upgrade','attack','destroy','rally']){d.q[a]=0;d.trials[a]=0;}}for(const b of w.buildings){b.level=1;b.hp=100;b.ruined=false;}return w;}
+export const living=w=>w.doodles.filter(d=>d.alive);
+export function affinity(d,g,w){const members=g.members.map(id=>w.doodles.find(o=>o.id===id)).filter(o=>o?.alive&&o.id!==d.id);if(!members.length)return -100;const p=d.personality;
+ const trust=members.reduce((s,o)=>s+(d.relationships[o.id]||0),0)/members.length;
+ const values=members.reduce((s,o)=>s+1-Math.abs(p.cooperation-o.personality.cooperation)-Math.abs(p.aggression-o.personality.aggression),0)/members.length;
+ const danger=members.filter(o=>o.warTarget||o.mood.anger>75).length/members.length;
+ return trust*.7+values*15+p.sociability*16+p.cooperation*10-p.independence*27-danger*p.caution*25;
+}
+function decide(d,w,kind,reason){if(d.decision?.kind!==kind){d.memories=d.memories.filter(m=>m!==reason);d.memories.unshift(reason.slice(0,240));d.memories.length=Math.min(6,d.memories.length);}d.decision={time:w.time,kind,reason};d.thought=reason.slice(0,180);}
+export function autonomousGroups(w,log){
+ const people=living(w);for(const d of people)if(!d.personality)initLife(d,w.seed); // old test fixtures / migration
+ for(const d of people){const current=w.groups.find(g=>g.id===d.groupId),p=d.personality;
+  if(current){const hostile=current.members.filter(id=>id!==d.id&&(d.relationships[id]||0)<-25).length;const score=affinity(d,current,w)+p.loyalty*16;
+   if(hostile>=2||score<3||(p.independence>.88&&score<22)){current.members=current.members.filter(id=>id!==d.id);d.groupId=null;decide(d,w,'leave',hostile>=2?'I am leaving. Too many members have turned against me.':'I choose my own path; this circle no longer fits me.');log(w,d.name+' chose to leave '+current.name+'.','group');}
+   else decide(d,w,'stay','I choose to stay: '+(p.loyalty>.65?'loyalty and shared history matter to me.':'I trust these neighbours and our goals fit.'));
+  }
+ }
+ w.groups=w.groups.filter(g=>{g.members=g.members.filter(id=>people.some(d=>d.id===id&&d.groupId===g.id));if(g.members.length>=2)return true;for(const id of g.members){const d=people.find(d=>d.id===id);d.groupId=null;decide(d,w,'independent','My circle dissolved. I will decide what comes next.');}return false;});
+ for(const d of people.filter(d=>!d.groupId)){const options=w.groups.filter(g=>g.members.some(id=>{const o=people.find(o=>o.id===id);return o&&Math.hypot(o.x-d.x,o.y-d.y)<1800&&(d.relationships[id]||0)>20;})).map(g=>({g,score:affinity(d,g,w)})).sort((a,b)=>b.score-a.score);const best=options[0];
+  if(best&&best.score>22){best.g.members.push(d.id);d.groupId=best.g.id;decide(d,w,'join','I chose '+best.g.name+': trust, shared values and safety outweigh going alone.');log(w,d.name+' chose to join '+best.g.name+'.','group');}
+  else if(best)decide(d,w,'refuse','I declined '+best.g.name+'. '+(d.personality.independence>.65?'My independence matters more.':'I need more trust and safety first.'));
+ }
+ for(const founder of people.filter(d=>!d.groupId)){if(w.groups.length>=20)break;const willing=people.filter(o=>o.id!==founder.id&&!o.groupId&&(founder.relationships[o.id]||0)>=24&&(o.relationships[founder.id]||0)>=24&&Math.hypot(o.x-founder.x,o.y-founder.y)<2000);
+  if(willing.length<2||founder.personality.independence>.86)continue;
+  const proposal={members:[founder.id,...willing.map(d=>d.id)]};const accepted=willing.filter(d=>affinity(d,proposal,w)>22);if(accepted.length<2)continue;
+  const id='g'+w.nextId++,style=founder.traits.builder>.7?'makers':founder.personality.aggression>.7?'guardians':'wanderers',g={id,name:founder.name+'’s '+(style==='makers'?'Ink Circle':style==='guardians'?'Thorn Circle':'Paperfolk'),members:[founder.id,...accepted.map(d=>d.id)],founded:w.time,color:founder.color,style,leader:founder.id};w.groups.push(g);
+  for(const d of [founder,...accepted]){d.groupId=id;decide(d,w,d===founder?'found':'join',d===founder?'I founded a circle with willing friends.':'I accepted this new circle because I trust its members.');}log(w,g.name+' formed with '+g.members.length+' willing members.','group');
+ }
+}
+export function rallySupport(d,leader,target,w){const p=d.personality,trust=(d.relationships[leader.id]||0)/100,hostility=-(d.relationships[target.id]||0)/100;return p.aggression*.4+p.dominance*.05+p.loyalty*.15+trust*.35+hostility*.3-p.empathy*.3-p.caution*.2;}
+export function rally(w,leader,target,log){if(!leader.alive||!target?.alive||!leader.groupId||leader.knowledge<20)return 0;let n=0;for(const d of living(w).filter(d=>d.groupId===leader.groupId&&d.id!==target.id)){
+ if(d===leader||rallySupport(d,leader,target,w)>.35){d.warTarget=target.id;d.rallyUntil=w.time+120;d.timer=0;decide(d,w,'rally','I chose to oppose '+target.name+' after weighing loyalty, grievance and danger.');n++;}else decide(d,w,'refuse-rally','I refused '+leader.name+'’s rally. This fight is not worth the risk or harm.');}
+ log(w,leader.name+' rallied '+n+' willing allies against '+target.name+'. Others could refuse.','conflict');return n;}
+export function markDead(w,d,cause,log){if(!d.alive)return;d.alive=false;d.health=0;d.vx=d.vy=0;d.action='rest';d.target=null;d.project=null;d.plan=null;d.death={time:w.time,cause:String(cause).slice(0,140)};d.thought='This story has ended. Its drawings and family remain.';w.deaths++;const group=w.groups.find(g=>g.id===d.groupId);if(group)group.members=group.members.filter(id=>id!==d.id);d.groupId=null;w.groups=w.groups.filter(g=>{if(g.members.length>=2)return true;for(const id of g.members){const o=w.doodles.find(o=>o.id===id);if(o)o.groupId=null;}return false;});for(const o of living(w)){if(o.target?.id===d.id)o.timer=0;if(o.warTarget===d.id)o.warTarget=null;}log(w,d.name+' died: '+cause+'.','death');}
+export function related(a,b,w){const ancestors=d=>{const found=new Set(),queue=[...d.parents];while(queue.length){const id=queue.pop();if(found.has(id))continue;found.add(id);const o=w.doodles.find(o=>o.id===id);if(o)queue.push(...o.parents);}return found;};const aa=ancestors(a),bb=ancestors(b);return aa.has(b.id)||bb.has(a.id)||[...aa].some(id=>bb.has(id));}
+export function haveChild(w,a,b,make,random,log){if(w.doodles.length>=240||living(w).length>=100||!a.alive||!b.alive||a.id===b.id||a.age<900||b.age<900||related(a,b,w))return null;
+ const id=w.nextId++,child=make(id,['Sprig','Poppy','Puddle','Finch','Lumi','Pipkin'][id%6]+' '+id,'A young doodle finding their own interests',random()<.5?a.color:b.color,(a.x+b.x)/2+30,(a.y+b.y)/2+30);
+ child.genome=inheritGenome(a,b,random);child.parents=[a.id,b.id];child.generation=Math.max(a.generation,b.generation)+1;child.born=w.time;child.stage='child';child.personality=characterTraits(child);child.appearance=phenotype(child);child.familyCooldown=1200;a.familyCooldown=b.familyCooldown=1200;for(const parent of [a,b]){child.relationships[parent.id]=65;parent.relationships[id]=65;}w.doodles.push(child);w.births++;log(w,child.name+' was born to '+a.name+' and '+b.name+' — generation '+child.generation+'.','birth');return child;
+}
+export function tickLife(w,dt,random,make,log){w.lifeClock+=dt;for(const d of living(w)){d.familyCooldown=Math.max(0,d.familyCooldown-dt);if(w.learning)d.knowledge=bounded(d.knowledge+dt*(.012+gene(d,'aptitude')*.012+d.personality.curiosity*.008),0,100);d.stage=d.parents.length&&d.age<600?'child':d.knowledge<12?'novice':d.knowledge<40?'learner':'inventor';if(d.warTarget&&w.time>d.rallyUntil)d.warTarget=null;
+ if(d.needs.food<1||d.needs.water<1){d.health=Math.max(0,d.health-dt*.35);if(d.health<=0)markDead(w,d,'needs went unmet',log);}}
+ if(w.lifeClock<30)return;w.lifeClock=0;
+ for(const b of w.buildings){b.level??=1;b.hp??=100;b.ruined??=false;}
+ if(!w.growth||w.doodles.length>=240||living(w).length>=100)return;
+ for(const a of living(w)){if(a.age<900||a.familyCooldown||a.needs.food<45||a.needs.water<45||a.health<55)continue;const b=living(w).find(o=>o.id>a.id&&o.age>=900&&!o.familyCooldown&&o.health>55&&o.needs.food>45&&o.needs.water>45&&(a.relationships[o.id]||0)>55&&(o.relationships[a.id]||0)>55&&Math.hypot(o.x-a.x,o.y-a.y)<220&&!related(a,o,w));if(!b)continue;
+ const shelters=w.buildings.filter(s=>s.finished&&!s.ruined&&Math.hypot(s.x-a.x,s.y-a.y)<450);if(shelters.length&&random()<.08+(a.personality.fertility+b.personality.fertility)*.12){haveChild(w,a,b,make,random,log);break;}}
+}
+export function validateLife(w,fail){const num=(v,a,b)=>Number.isFinite(v)&&v>=a&&v<=b;for(const k of ['births','deaths','destructions','upgrades'])if(!Number.isInteger(w[k])||w[k]<0)fail();if(typeof w.lethal!=='boolean'||!num(w.lifeClock,0,31))fail();const ids=new Set(w.doodles.map(d=>d.id));
+ for(const d of w.doodles){if(!d.genome||GENE_NAMES.some(k=>!Array.isArray(d.genome[k])||d.genome[k].length!==2||d.genome[k].some(v=>!num(v,0,1)))||!d.personality||TRAIT_NAMES.some(k=>!num(d.personality[k],0,1))||!Array.isArray(d.parents)||d.parents.length>2||d.parents.some(id=>id===d.id||!ids.has(id)||id>=d.id)||!Number.isInteger(d.generation)||d.generation<0||!num(d.born,0,w.time)||!num(d.knowledge,0,100)||!num(d.familyCooldown,0,1200)||typeof d.alive!=='boolean'||!['child','novice','learner','inventor'].includes(d.stage)||!d.decision||typeof d.decision.reason!=='string'||d.decision.reason.length>240||!num(d.decision.time,0,w.time)||typeof d.decision.kind!=='string'||d.decision.kind.length>30||!num(d.rallyUntil,0,1e12)||(d.warTarget!==null&&!ids.has(d.warTarget))||(d.death&&(!num(d.death.time,0,w.time)||typeof d.death.cause!=='string'||d.death.cause.length>140))||(!d.alive&&(d.health!==0||!d.death)))fail();d.appearance=phenotype(d);}
+ for(const b of w.buildings)if(!num(b.level,1,5)||!Number.isInteger(b.level)||!num(b.hp,0,500)||typeof b.ruined!=='boolean'||(b.upgradeProgress!==undefined&&!num(b.upgradeProgress,0,1)))fail();
+}
+export function characterStrokes(d){const a=phenotype(d),p=[],head=a.head;const add=v=>p.push(v),oval=(x,y,rx,ry)=>Array.from({length:25},(_,i)=>[x+Math.cos(i/24*Math.PI*2)*rx,y+Math.sin(i/24*Math.PI*2)*ry]);
+ if(a.species==='robot'){add([[-head,-25],[head,-25],[head,-7],[-head,-7],[-head,-25]]);add([[0,-25],[0,-33],[5,-33]]);}else if(a.species==='mushroom'){add([[-head*1.7,-14],[-head,-29],[0,-34],[head,-29],[head*1.7,-14],[-head*1.7,-14]]);add([[-head*.7,-14],[-head*.7,-4],[head*.7,-4],[head*.7,-14]]);}else {add(oval(0,-16,head,head*(a.species==='alien'?1.3:1)));}
+ if(['cat','fox','dragon'].includes(a.species)){add([[-head,-21],[-head-2,-35],[-head*.2,-26]]);add([[head,-21],[head+2,-35],[head*.2,-26]]);}
+ if(a.species==='rabbit'){add(oval(-5,-32,3,12));add(oval(5,-32,3,12));}
+ if(a.species==='bird'){add([[head,-18],[head+10,-14],[head,-11]]);}
+ if(a.species==='ghost'){add([[-head,-8],[-15,24],[-6,18],[0,24],[7,18],[15,24],[head,-8]]);}else{const body=4+gene(d,'body')*6;add([[-body,-4],[-body*.6,10],[body*.6,10],[body,-4],[-body,-4]]);add([[-body,-3],[-17,7]]);add([[body,-3],[17,5]]);add([[-body*.6,10],[-11,24]]);add([[body*.6,10],[11,24]]);}
+ add(oval(-a.eyes,-17,1,1.5));add(oval(a.eyes,-17,1,1.5));add([[-3,-11],[0,-9],[4,-12]]);
+ if(a.hair>1&&a.species==='human')for(let i=0;i<a.hair;i++)add([[i*4-5,-25],[i*4-8,-31-i%2*3]]);
+ if(a.accessory==='wizard')add([[-15,-25],[0,-48],[12,-25],[-15,-25]]);
+ if(a.accessory==='helmet')add([[-13,-17],[-12,-29],[0,-34],[12,-29],[13,-17]]);
+ if(a.accessory==='hat'||a.accessory==='pirate')add([[-17,-24],[17,-24],[8,-34],[-8,-34],[-17,-24]]);
+ if(a.accessory==='crown')add([[-12,-25],[-14,-38],[-5,-31],[0,-41],[5,-31],[14,-38],[12,-25]]);
+ if(a.accessory==='glasses'||/glasses/.test(d.description.toLowerCase())){add(oval(-5,-17,4,4));add(oval(5,-17,4,4));add([[-1,-17],[1,-17]]);}
+ if(a.accessory==='wings'||a.species==='dragon'){add([[-6,-4],[-27,-20],[-28,9],[-6,3]]);add([[6,-4],[27,-20],[28,9],[6,3]]);}
+ return p.map(path=>path.map(([x,y])=>[bounded(.5+x/90),bounded(.57+y*a.height/110)]));
+}
