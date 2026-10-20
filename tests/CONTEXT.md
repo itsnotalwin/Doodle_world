@@ -1,0 +1,2 @@
+# Tests
+Node's built-in test runner verifies the shared deterministic engine and Worker bridge. Check finite positions, resources, construction, experience learning, description effects, save validation, model output bounds and request-budget refusal. Fake Groq transport must assert a single upstream call with no retry and no credential exposure. Real upstream testing is separate and remains blocked until the user supplies a server-side secret.

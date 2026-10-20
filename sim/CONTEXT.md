@@ -1,0 +1,2 @@
+# Simulation
+Owns deterministic fixed-step movement, skills, action values, resources, construction and non-graphic sparring. `engine.js` is shared by the browser and Node tests, with an injected seeded random generator. No HTTP, DOM or API secrets belong here. All state must remain finite, bounded, serializable and validated on import. Learning changes future action selection through incremental action rewards; skills improve effectiveness through practice. Tests check these effects rather than merely checking labels.

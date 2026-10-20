@@ -1,0 +1,2 @@
+# Game interface
+Owns the paper-map canvas, character creator, inspector, journal, minimap and settings. `index.html` is embedded at build time with the engine. Canvas coordinates are world-space, drawing-pad points are normalized, DOM content uses textContent for user text. Maintain keyboard alternatives and small-screen controls. Real captures must be updated after visual changes; DESIGN.md records the evidence and viewport. Verify drawing, pan/zoom, selection, saving, pause and responsive dialogs through the running app.

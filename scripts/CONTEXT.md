@@ -1,0 +1,2 @@
+# Scripts
+Owns dependency-free development, packaging, and artifact verification. Build embeds the simulation, page, and Worker into `dist/server/index.js` and copies manifest plus schema migrations. The development HTTP adapter serves the same app factory on port 4173 without production identity or secrets. Use the Sites preview supervisor for browser QA. Run build and tests before publishing; do not commit generated dist output.

@@ -1,0 +1,2 @@
+# Worker
+Owns HTTP routes and Groq planning. `index.js` exports an app factory accepting the built page. Model output is data only; enum actions and time limits are validated. Calls require authenticated private access, a server secret and atomic D1 quota reservation. Tests mock transport; real Groq testing needs a user-supplied secret. Build embeds this module with UI and simulation. Never return upstream error bodies or secrets.

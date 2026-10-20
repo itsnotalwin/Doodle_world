@@ -1,0 +1,12 @@
+import {readFile,mkdir,writeFile,cp,rm} from 'node:fs/promises';
+const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
+const engine=(await read('sim/engine.js')).replaceAll(/^export /gm,'');
+const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine);
+const server=await read('worker/index.js');
+await rm(new URL('dist/',root),{recursive:true,force:true});
+await mkdir(new URL('dist/server/',root),{recursive:true});
+await mkdir(new URL('dist/.openai/',root),{recursive:true});
+await writeFile(new URL('dist/server/index.js',root),server+'\nexport default createApp('+JSON.stringify(html)+');\n');
+await cp(new URL('.openai/hosting.json',root),new URL('dist/.openai/hosting.json',root));
+await cp(new URL('drizzle/',root),new URL('dist/.openai/drizzle/',root),{recursive:true,filter:p=>!p.endsWith('CONTEXT.md')});
+console.log('Built Doodleworld Worker with embedded simulation and UI.');
