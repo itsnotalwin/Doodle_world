@@ -8,7 +8,12 @@ The map now contains functional houses, wells, granaries, workshops/towers, real
 
 The former Gallery tab is Settlement. Inspectors lead with six need bars, the current goal/reason, role, household and supplies. Expandable panels show actual proficiencies, mentors, recent outcomes and contextual action values. Creator randomization uses combinatorial descriptions and varied geometry; manual description choices stay authoritative. Settings separates device/export storage from authenticated cloud checkpoints, including conflicts and offline availability. Preserve original paper/charcoal/leaf-green style, keyboard tabs, touch, scrollable notebook and mobile modal layout.
 
-## Genuine visual evidence
+## Draft polish — verification incomplete
+The repository draft aligns normalized strokes for creator-generated, inherited and manual figures; fits extreme sketches within 56 × 78 world units without changing saved strokes; and applies the child scale once. Role badges sit beside silhouettes. Selected thoughts clear the role title, names use screen-space collision reservations, and distant scenes reduce detail. Rounded joins preserve the paper drawing style. Selection zoom retains its camera destination; creator previews encode appearance keywords before rendering.
+
+**No new browser capture is available:** the execution environment is unavailable and the cloud browser tool is not exposed. All images below remain the genuine deployed-version-4 baseline, inspected as reference; they do not verify this draft. Before merge/publication, check creator versus world, parent/child scale, tall ears/hats/crowns/wings, dense groups, repeated selection/zoom, keyboard/scroll and mobile notebook/creator, then capture the actual changed UI. The Node suite, production build and build-standard checker are also pending.
+
+## Genuine visual evidence — deployed version 4 baseline
 Captured 2026-10-20 from the running local preview:
 - SCREENSHOT.png: `/`, 1363 × 936, actual early farming settlement, Moss's needs/goal and two-person household.
 - SCREENSHOT-GLOBE.png: `/`, 1363 × 936, same world projected as a globe with functional settlement counters.
