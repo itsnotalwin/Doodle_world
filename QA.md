@@ -1,14 +1,18 @@
-# Evolution verification — 20 October 2026
+# Settlement verification — 20 October 2026
 
 ## Automated
-36 tests pass. Behavioral checks cover all 95 motif geometries, distinct genomes and appearances, 24 traits, novice development, accepting/refusing/leaving circles, dissent at a rally, parental allele recombination without skill inheritance, family prerequisites, upgrade durability, destructive ruins, lethal attacks and historical ownership, malformed genes/ancestry, v1/v2 migration and remote-world saves. Existing needs, creativity, resource, environment, globe and mocked Groq quota/no-retry checks remain.
+55 tests pass. These cover original movement/saves/resources/social behavior and optional Groq quota/no-retry rules, plus version 4 migration, skill-gated construction/farming/crafting, real two-bed capacity and planned housing, crop growth/watering/harvesting, material conservation, granary/well use, teaching and individual mentors, contextual learning, purpose/belonging relief, genetic inheritance without skill inheritance, parent food sharing, diverse randomization, supported leadership, campaign prerequisites and sustained territory occupation interrupted by defenders.
 
-Both Worker ESM and embedded client JavaScript parse. No dependencies added. No real Groq request made; key/model are absent.
+Five checkpoint checks apply the actual new SQL schema to real SQLite: identity/same-origin protection, exact brain/world restoration and subsequent revisions, owner isolation/stale writers, simultaneous optimistic writers and large chunked saves/poisoned state. A signed-in production checkpoint save/load remains an end-user verification item; the local browser preview has no hosted visitor identity or D1 binding.
+
+Worker ESM and embedded client JavaScript parse. No package dependencies added. No live Groq call has been made.
 
 ## Longer runs
-The final seeded two-hour run: 19 living residents, 20 lifetime stories, one birth, one death, one surviving circle, 28 upgrades, and 1,200 artwork records. Save validation passed; compact JSON is 2,728,981 bytes. This seed did not produce a ruined building; destruction and rallies are verified separately with controlled behavioral fixtures, not claimed as observed in this long run. A 100-resident, 30-second stress run stayed finite and save-valid.
+The final seeded two-hour run is save-valid: 36 living residents, 38 lifetime stories, 16 births, 2 deaths, 55 building records, 10 fields, 8 harvests, 204 crafted items, 1827 teaching moments, 4 groups, 2 territories and 1 kingdom. JSON size: 437,899 bytes. It generated zero decorative artworks. A 100-resident, 60-second stress run also remained finite and save-valid.
 
-## Browser evidence
-The separate local preview migrated its existing save. Before importing the real seeded engine fixture, its current world was exported through the UI. Normal import/confirmation was used; no player state ships in the source. Checked description-shaped rabbit-wizard preview, Randomize, creation, personality and family inspection, actual group choice reasons, keyboard notebook navigation, scrollable vocabulary and globe/map controls. Desktop and responsive evidence is recorded in ui/DESIGN.md. Production audience is preserved separately by native Sites deployment results.
+A separate early fixture at 240.1 simulated seconds shows growing/ripe crops and real two-person homes. Both fixtures come from the real seeded engine, are imported via normal UI after exporting the preview world, and are not shipped as starting player state. Long-run kingdom growth does not prove every strategy occurs in every seed; conquest/destruction/campaign conditions are additionally verified with controlled behavioral scenarios.
 
-The world is bounded and browser-local. No live Groq, shared multiplayer, neural training or progress while closed is claimed. Screenshots are actual preview renders; responsive-width evidence uses a real iframe viewport, not a physical mobile device.
+## Browser and evidence
+Verified migration of the existing preview save, absence of decorative map art, fields and harvest estimates, cottage occupancy/resident links, needs/supplies/goals, learned proficiency/outcomes, supported leader/sovereign visuals, repeated visibly distinct Randomize results and insertion of a new novice. Checked notebook scrolling and keyboard navigation, globe/2D continuity and responsive controls. Cloud unavailable state in the unsigned local preview is explicit and preserves local play. Current screenshot provenance is in ui/DESIGN.md.
+
+No perfect-balance, unlimited-population, human-intelligence, shared-multiplayer or closed-page background progression claim. Source code lives in GitHub; individuals' evolving state lives in versioned world saves/checkpoints.

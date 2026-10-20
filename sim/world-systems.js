@@ -27,12 +27,12 @@ export function resourceNodes(w,x,y,radius=650){
  for(const n of fixed)if(Math.hypot(n.x-x,n.y-y)<radius)nodes.push(n);
  for(let i=cx-reach;i<=cx+reach;i++)for(let j=cy-reach;j<=cy+reach;j++){
   if(Math.abs(i*cell)>FIELD_SIZE/2-100||Math.abs(j*cell)>FIELD_SIZE/2-100)continue;
-  const n=hash(i,j,w.seed),kind=n<.23?'food':n<.5?'ink':n<.59?'water':null;if(!kind)continue;
+  const n=hash(i,j,w.seed),kind=n<.22?'food':n<.43?'wood':n<.57?'stone':n<.7?'water':null;if(!kind)continue;
   const px=i*cell+40+hash(i+9,j,w.seed)*130,py=j*cell+40+hash(i,j+9,w.seed)*130;
   if(terrainAt(px,py,w.seed).biome==='water'&&kind!=='water')continue;
   if(Math.hypot(px-x,py-y)>radius)continue;
   const id=kind+':'+i+':'+j;if(nodes.some(o=>o.id===id))continue;
-  nodes.push({id,x:px,y:py,kind,max:kind==='water'?100:10});
+  nodes.push({id,x:px,y:py,kind,max:kind==='water'?100:kind==='food'?10:18});
  }
  return nodes.map(n=>({...n,amount:w.resources?.[n.id]?.amount??n.max}));
 }
@@ -70,6 +70,7 @@ export function interact(w,a,b,type,log){
   const gain=(type==='admire'?7:5)+shared*2+(a.personality?.openness??.5)*2;if(a.ink>20&&b.ink<8&&(a.personality?.generosity??0)>.6){a.ink-=3;b.ink+=3;}if(type==='admire'&&(a.personality?.jealousy??0)>.8&&b.artCount>a.artCount+3)feelAngry(a,b,3);changeBond(a,b,gain);changeBond(b,a,gain*.9);
   a.mood.joy=cap(a.mood.joy+7,0,100);b.mood.joy=cap(b.mood.joy+5,0,100);
  }
+ if(w.version>=4){a.needs.belonging=cap(a.needs.belonging+10,0,100);b.needs.belonging=cap(b.needs.belonging+7,0,100);}
  a.mood.loneliness=Math.max(0,a.mood.loneliness-28);b.mood.loneliness=Math.max(0,b.mood.loneliness-18);
  a.thought=names[type]?.[a.id%2]||names.talk[0];b.thought=type==='argue'?'I won’t forget that in a hurry.':type==='apologize'?'A fresh start might be nice.':'Maybe we could make something together.';
  a.socialCooldown=18;b.socialCooldown=Math.max(b.socialCooldown,10);

@@ -1,9 +1,10 @@
 import {readFile,mkdir,writeFile,cp,rm} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
-const systems=(await Promise.all(['drawing-library','life-systems','world-systems'].map(n=>read('sim/'+n+'.js')))).map(s=>s.replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'')).join('\n');
+const systems=(await Promise.all(['drawing-library','life-systems','world-systems','livelihood','agent-brain'].map(n=>read('sim/'+n+'.js')))).map(s=>s.replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'')).join('\n');
 const engine=systems+'\n'+(await read('sim/engine.js')).replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'');
-const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine).replace('/*__WORLD_VIEW__*/',await read('ui/world-view.js'));
-const server=await read('worker/index.js');
+const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine).replace('/*__WORLD_VIEW__*/',await read('ui/world-view.js')).replace('/*__SETTLEMENT_VIEW__*/',await read('ui/settlement-view.js')).replace('/*__CLOUD_SAVE__*/',await read('ui/cloud-save.js'));
+const storeSource=(await read('worker/world-store.js')).replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'');
+const server='const validateWorld=(()=>{'+engine+';return validateWorld;})();\n'+storeSource+'\n'+(await read('worker/index.js')).replaceAll(/^import .*?;\n/gm,'');
 await rm(new URL('dist/',root),{recursive:true,force:true});
 await mkdir(new URL('dist/server/',root),{recursive:true});
 await mkdir(new URL('dist/.openai/',root),{recursive:true});
