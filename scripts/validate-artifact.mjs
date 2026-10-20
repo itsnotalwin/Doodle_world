@@ -23,3 +23,14 @@ assert.equal(
 );
 
 console.log("Artifact is valid ESM and exports default.fetch");
+
+// Parse the embedded browser program too; valid Worker ESM alone is insufficient.
+const pageResponse = await workerModule.default.fetch(new Request('https://doodleworld.test/'), {});
+assert.equal(pageResponse.status, 200);
+const html = await pageResponse.text();
+assert.ok(!html.includes('/*__ENGINE__*/') && !html.includes('/*__WORLD_VIEW__*/'));
+const {Script} = await import('node:vm');
+const browserProgram = html.match(/<script type=\"module\">([\s\S]*?)<\/script>/)?.[1];
+assert.ok(browserProgram, 'Browser program must be embedded');
+new Script(browserProgram, {filename: 'doodleworld-client.js'});
+console.log('Embedded browser JavaScript parses successfully');

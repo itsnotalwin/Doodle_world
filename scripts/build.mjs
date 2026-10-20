@@ -1,7 +1,8 @@
 import {readFile,mkdir,writeFile,cp,rm} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),read=p=>readFile(new URL(p,root),'utf8');
-const engine=(await read('sim/engine.js')).replaceAll(/^export /gm,'');
-const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine);
+const systems=(await read('sim/world-systems.js')).replaceAll(/^export /gm,'');
+const engine=systems+'\n'+(await read('sim/engine.js')).replaceAll(/^import .*?;\n/gm,'').replaceAll(/^export /gm,'');
+const html=(await read('ui/index.html')).replace('/*__ENGINE__*/',engine).replace('/*__WORLD_VIEW__*/',await read('ui/world-view.js'));
 const server=await read('worker/index.js');
 await rm(new URL('dist/',root),{recursive:true,force:true});
 await mkdir(new URL('dist/server/',root),{recursive:true});

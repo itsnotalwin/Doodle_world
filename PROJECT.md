@@ -1,16 +1,19 @@
 # Doodleworld
 
 ## Purpose
-A large ink-and-paper canvas simulation. Doodles move, practise, gather ink, draw buildings, and spar. Players can draw a custom doodle and describe its personality. Occasional Groq plans guide local execution.
+A growing paper-and-ink simulation. Doodles invent drawings and building designs, learn through practice, meet, develop trust and grudges, form circles, and sustain settlements. A globe and detailed 2D canvas are projections of the same 24,000 × 24,000 world.
 
 ## Architecture
-Dependency-free JavaScript. `sim/engine.js` owns serializable simulation and experience-based action learning. `ui/index.html` owns canvas rendering and controls. `worker/index.js` owns the server-side Groq bridge. Build embeds all source into one Worker. World saves are device-local and exportable, not shared multiplayer.
+Dependency-free JavaScript. `sim/engine.js` owns fixed-step activity, learning and strict versioned saves; `sim/world-systems.js` owns biomes, resources, social rules, procedural artwork and tested globe projection. `ui/index.html` owns controls and character creation; `ui/world-view.js` owns globe rendering, environment, gallery and social inspection. `worker/index.js` is the secret-bearing optional Groq bridge. The build embeds simulation and UI into one Worker. Player worlds are device-local and exportable.
 
 ## Run and verify
-`npm run dev` serves port 4173. `npm test` exercises simulation, schema limits and brain-budget behavior. `npm run build` packages a Worker; `npm run validate` checks it. No Groq calls without both server environment keys and a provisioned quota DB.
+`npm run dev` serves port 4173. `npm test` runs 24 behavioral checks. `npm run build` and `npm run validate` verify both Worker ESM and embedded browser JavaScript. Use Sites preview for browser QA. See `QA.md` for tested scenarios and real screenshot provenance.
 
-## Constraints
-Source target: https://github.com/itsnotalwin/Doodle_world (public, initially empty). API key must only be a server secret. Huge means a finite 24,000 x 24,000 world with viewport culling; no infinite-world claim. Learning means persistent action values and practice skills, not neural-network training. Verified: 13 automated tests pass; desktop and 390 × 844 responsive-width captures recorded. Browser checks passed for creator insertion, save persistence after reload, pause, arrow-key pan, wheel zoom, mobile notebook and creator scrolling. Live Groq integration remains untested without a key.
+## Decisions and limits
+Source: https://github.com/itsnotalwin/Doodle_world. Preserve the original aesthetic and saves. Version 1 saves migrate additively to version 2; existing sketches, skills, buildings and memories survive. Current bounds: 80 total doodles; automatic arrivals stop at 32; 300 buildings; 400 artwork records. At those content bounds, other needs, emotions, relationships and simulation continue. No shared multiplayer or progression while the page is closed. Creativity is generated motif composition and variable blueprints, emotions are explicit social rules, and learning is experience-based action values and skills; no neural training or learned physics claim.
 
-## Next
-Finish prototype and QA, sync source, publish privately, then configure a supplied Groq secret and run one deliberate integration test.
+## Optional Groq
+No provider call is required for the growing world. One explicitly requested batch can supply up to 12 character plans, art recipes, social targets and thoughts; local execution lasts at most 180 simulated seconds before local policies resume. Server D1 quota defaults to five attempts per UTC day with a 60-second cooldown; failed attempts count and nothing retries automatically. Key stays in server secrets. Live testing is pending a user-supplied `GROQ_API_KEY` plus supported `GROQ_MODEL`.
+
+## Next action
+Configure the server-side Groq key/model and test one deliberate batch. Further civilization systems and background/cloud worlds remain future work; keep expansion grounded in observed behavior and user feedback.
